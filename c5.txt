@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Trò chơi Ném Còn</title>
+  <style>
+    body {
+      text-align: center;
+      background: #f0f9ff;
+      font-family: Arial, sans-serif;
+    }
+    h2 { color: #c0392b; }
+
+    #gameArea {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 20px auto;
+      border: 2px solid #333;
+      background: linear-gradient(to top, #2ecc71 40%, #87ceeb 40%);
+      overflow: hidden;
+    }
+    #target {
+      position: absolute;
+      bottom: 50px;
+      right: 100px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 5px solid red;
+      background: transparent;
+    }
+    #ball {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      background: url("https://i.imgur.com/zJJ7EtP.png") no-repeat center;
+      background-size: cover;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Trò chơi Ném Còn 🎉</h2>
+  <div id="gameArea">
+    <canvas id="fireworks"></canvas>
+    <div id="target"></div>
+    <div id="ball"></div>
+  </div>
+  <button onclick="throwBall()">Ném!</button>
+  <p id="result"></p>
+
+  <script>
+    let canvas = document.getElementById("fireworks");
+    let ctx = canvas.getContext("2d");
+    canvas.width = 600;
+    canvas.height = 400;
+
+    class Firework {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.particles = [];
+        for (let i = 0; i < 30; i++) {
+          this.particles.push({
+            x: x, y: y,
+            angle: Math.random() * 2 * Math.PI,
+            speed: Math.random() * 5 + 2,
+            radius: 2,
+            life: 60
+          });
+        }
+      }
+      update() {
+        this.particles.forEach(p => {
+          p.x += Math.cos(p.angle) * p.speed;
+          p.y += Math.sin(p.angle) * p.speed;
+          p.life--;
+        });
+      }
+      draw() {
+        this.particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = hsl(${Math.random() * 360}, 100%, 50%);
+          ctx.fill();
+        });
+      }
+    }
+
+    let fireworks = [];
+
+    function throwBall() {
+      let ball = document.getElementById("ball");
+      let result = document.getElementById("result");
+
+      let x = 50;
+      let y = 0;
+      let vx = 5;
+      let vy = 15;
+      let gravity = 0.7;
+
+      let target = document.getElementById("target").getBoundingClientRect();
+      let area = document.getElementById("gameArea").getBoundingClientRect();
+
+      let timer = setInterval(() => {
+        x += vx;
+        y += vy;
+        vy -= gravity;
+
+        ball.style.left = x + "px";
+        ball.style.bottom = y + "px";
+
+        let ballRect = ball.getBoundingClientRect();
+
+        if (ballRect.right > target.left &&
+            ballRect.left < target.right &&
+            ballRect.bottom < target.bottom &&
+            ballRect.top > target.top) {
+          clearInterval(timer);
+          result.innerText = "🎯 Trúng rồi! Tuyệt vời!";
+          fireworks.push(new Firework(x + 50, area.height - y - 100));
+          animateFireworks();
+        }
+
+        if (y <= 0 && x > area.width) {
+          clearInterval(timer);
+          result.innerText = "😢 Trượt mất rồi, thử lại nào!";
+        }
+      }, 50);
+    }
+
+    function animateFireworks() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      fireworks.forEach((fw, i) => {
+        fw.update();
+        fw.draw();
+        fw.particles = fw.particles.filter(p => p.life > 0);
+        if (fw.particles.length === 0) fireworks.splice(i, 1);
+      });
+      if (fireworks.length > 0) {
+        requestAnimationFrame(animateFireworks);
+      }
+    }
+  </script>
+</body>
+</html>
